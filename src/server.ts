@@ -1,27 +1,17 @@
+import "dotenv/config";
 import cors from "cors";
-import express from "express";
 import { ApolloServer } from "@apollo/server";
+import express, { Application } from "express";
+import { typeDefs } from "./graphql/typeDefs/index.js";
+import { resolvers } from "./graphql/resolvers/index.js";
 import { expressMiddleware } from "@apollo/server/express4";
-import gql from "graphql-tag";
 
 async function Main() {
-  const app = express();
+  const app: Application = express();
 
   // Middlewares
   app.use(cors());
   app.use(express.json());
-
-  const typeDefs = gql`
-    type Query {
-      hello: String
-    }
-  `;
-
-  const resolvers = {
-    Query: {
-      hello: () => "Hello, world!",
-    },
-  };
 
   // Apollo GraphQL server
   const server = new ApolloServer({
@@ -38,8 +28,8 @@ async function Main() {
     })
   );
 
-  app.listen(4000, () => {
-    console.log("Server running on http://localhost:4000/graphql");
+  app.listen(process.env.PORT, () => {
+    console.log(`Server running on ${process.env.PORT}`);
   });
 }
 
