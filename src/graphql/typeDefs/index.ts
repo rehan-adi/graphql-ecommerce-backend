@@ -1,7 +1,3 @@
-import gql from "graphql-tag";
+import { authTypeDefs } from "./auth.typeDefs.js";
 
-export const typeDefs = gql`
-  type Query {
-    hello: String
-  }
-`;
+export const typeDefs = [authTypeDefs];
