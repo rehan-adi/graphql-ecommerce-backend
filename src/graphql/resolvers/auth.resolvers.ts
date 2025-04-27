@@ -38,24 +38,21 @@ export const AuthResolvers = {
 
         const hashPassword = await HashPassword(validatedPassword);
 
-        const user = await prisma.$transaction(async (prisma) => {
-          const newUser = await prisma.user.create({
-            data: {
-              username: validatedUsername,
-              email: validatedEmail,
-              password: hashPassword,
-            },
-          });
-
-          return newUser;
+        const user = await prisma.user.create({
+          data: {
+            username: validatedUsername,
+            email: validatedEmail,
+            password: hashPassword,
+          },
         });
 
-        console.log(user);
-
         return {
-          success: true,
-          data: { id: user.id, email: user.email },
-          message: "User created successfully.",
+          data: {
+            id: user.id,
+            email: user.email,
+            username: user.username,
+            role: user.role,
+          },
         };
       } catch (error) {
         logger.error("Error during user signup: ", error);
