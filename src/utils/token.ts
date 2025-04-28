@@ -16,5 +16,5 @@ export function VerifyToken(token: string) {
 
   const decoded = jwt.verify(token, process.env.JWT_SECRET!);
 
-  return decoded as { id: string; email: string };
+  return decoded as { id: number; email: string };
 }
