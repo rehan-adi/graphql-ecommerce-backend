@@ -8,3 +8,7 @@ export function GenerateToken(id: number, email: string) {
 
   return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "72h" });
 }
+
+export function VerifyToken(token: string) {
+  return jwt.verify(token, process.env.JWT_SECRET);
+}
