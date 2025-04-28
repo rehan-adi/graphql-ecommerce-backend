@@ -1,9 +1,11 @@
 import { GraphQLError } from "graphql";
 import prisma from "../../lib/prisma.js";
 import { logger } from "../../utils/logger.js";
-import { SignupArgs } from "../../interfaces/args.js";
-import { signupValidation } from "../../validations/auth.js";
-import { HashPassword, CompirePassword } from "../../utils/password.js";
+import { Context } from "../../types/context.js";
+import { GenerateToken } from "../../utils/token.js";
+import { SignupArgs, SigninArgs } from "../../interfaces/args.js";
+import { HashPassword, ComparePassword } from "../../utils/password.js";
+import { signinValidation, signupValidation } from "../../validations/auth.js";
 
 export const AuthResolvers = {
   Mutation: {
@@ -61,6 +63,68 @@ export const AuthResolvers = {
         });
       }
     },
-    signin: async (_: any, { email, password }: any) => {},
+    signin: async (_: any, args: SigninArgs, context: Context) => {
+      try {
+        const { res } = context;
+        const { email, password } = args;
+
+        const data = signinValidation.safeParse({ email, password });
+
+        if (!data.success) {
+          logger.error("Validation failed for data: ", data);
+          throw new GraphQLError("Validation failed", {
+            extensions: { code: "BAD_USER_INPUT" },
+          });
+        }
+
+        const { email: validatedEmail, password: validatedPassword } =
+          data.data;
+
+        const existingUser = await prisma.user.findUnique({
+          where: { email: validatedEmail },
+        });
+
+        if (!existingUser) {
+          throw new GraphQLError("User not found", {
+            extensions: { code: "BAD_USER_INPUT" },
+          });
+        }
+
+        const isPasswordValid = await ComparePassword(
+          validatedPassword,
+          existingUser.password
+        );
+
+        if (!isPasswordValid) {
+          throw new GraphQLError("Password is not valid", {
+            extensions: { code: "UNAUTHORIZED" },
+          });
+        }
+
+        const token = GenerateToken(existingUser.id, existingUser.email);
+
+        res.cookie("token", token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "strict",
+          maxAge: 72 * 60 * 60 * 1000,
+        });
+
+        return {
+          token,
+          data: {
+            id: existingUser.id,
+            email: existingUser.email,
+            username: existingUser.username,
+            role: existingUser.role,
+          },
+        };
+      } catch (error) {
+        logger.error("Error during signin: ", error);
+        throw new GraphQLError("Internal server error", {
+          extensions: { code: "INTERNAL_SERVER_ERROR" },
+        });
+      }
+    },
   },
 };
