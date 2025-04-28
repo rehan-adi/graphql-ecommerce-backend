@@ -17,13 +17,17 @@ export const authTypeDefs = gql`
     data: User!
   }
 
+  type UserProfileResponse {
+    data: User!
+  }
+
   enum Role {
     Admin
     User
   }
 
   type Query {
-    getUserProfile: User
+    getUserProfile: UserProfileResponse!
   }
 
   type Mutation {
