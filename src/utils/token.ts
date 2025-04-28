@@ -10,5 +10,11 @@ export function GenerateToken(id: number, email: string) {
 }
 
 export function VerifyToken(token: string) {
-  return jwt.verify(token, process.env.JWT_SECRET);
+  if (!token) {
+    return null;
+  }
+
+  const decoded = jwt.verify(token, process.env.JWT_SECRET!);
+
+  return decoded as { id: string; email: string };
 }

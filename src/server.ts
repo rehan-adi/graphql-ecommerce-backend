@@ -1,5 +1,6 @@
 import "dotenv/config";
 import cors from "cors";
+import cookie from "cookie";
 import morgan from "morgan";
 import { logger } from "./utils/logger.js";
 import { Context } from "./types/context.js";
@@ -8,6 +9,7 @@ import express, { Application } from "express";
 import { typeDefs } from "./graphql/typeDefs/index.js";
 import { resolvers } from "./graphql/resolvers/index.js";
 import { expressMiddleware } from "@apollo/server/express4";
+import { VerifyToken } from "./utils/token.js";
 
 async function Main() {
   const app: Application = express();
@@ -34,11 +36,24 @@ async function Main() {
   app.use(
     "/graphql",
     expressMiddleware(server, {
-      context: async ({ req, res }): Promise<Context> => ({
-        token: req.headers.token,
-        req,
-        res,
-      }),
+      context: async ({ req, res }): Promise<Context> => {
+        let token: string | undefined = undefined;
+
+        const authHeader = req.headers.authorization;
+
+        if (authHeader && authHeader.startsWith("Bearer ")) {
+          token = authHeader.split(" ")[1];
+        }
+
+        if (!token && req.headers.cookie) {
+          const cookies = cookie.parse(req.headers.cookie);
+          token = cookies.token;
+        }
+
+        const user = token ? VerifyToken(token) : null;
+
+        return { token, user, req, res };
+      },
     })
   );
 
