@@ -16,3 +16,10 @@ export interface UserArgs {
 export interface ProductIdArgs {
   productId: number;
 }
+
+export interface CreateProductIdArgs {
+  name: string;
+  description: string;
+  price: number;
+  imageUrl: string;
+}

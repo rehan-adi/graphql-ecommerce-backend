@@ -1,7 +1,9 @@
-import prisma from "../../lib/prisma.js";
 import { GraphQLError } from "graphql";
+import prisma from "../../lib/prisma.js";
 import { logger } from "../../utils/logger.js";
-import { ProductIdArgs } from "../../interfaces/args.js";
+import { Context } from "../../types/context.js";
+import { CreateProductIdArgs, ProductIdArgs } from "../../interfaces/args.js";
+import { CreateProductValidation } from "../../validations/product.js";
 
 export const productResolvers = {
   Query: {
@@ -61,5 +63,67 @@ export const productResolvers = {
       }
     },
   },
-  Mutation: {},
+  Mutation: {
+    createProduct: async (
+      _: any,
+      args: CreateProductIdArgs,
+      context: Context
+    ) => {
+      try {
+        const creator = context.user?.role;
+
+        if (creator !== "Admin") {
+          logger.error("Unauthorized: Must be admin to create products");
+          throw new GraphQLError("Unauthorized", {
+            extensions: { code: "UNAUTHORIZED" },
+          });
+        }
+
+        const parsed = CreateProductValidation.safeParse(args);
+
+        if (!parsed.success) {
+          logger.error("Validation failed:", parsed.error.format());
+          throw new GraphQLError("Invalid input", {
+            extensions: {
+              code: "BAD_USER_INPUT",
+              details: parsed.error.flatten(),
+            },
+          });
+        }
+
+        const { name, description, price, imageUrl } = parsed.data;
+
+        const existingProduct = await prisma.product.findFirst({
+          where: { name: parsed.data.name },
+        });
+
+        if (existingProduct) {
+          logger.error(
+            `Product with name '${parsed.data.name}' already exists`
+          );
+          throw new GraphQLError("Product already exists", {
+            extensions: { code: "CONFLICT" },
+          });
+        }
+
+        const product = await prisma.product.create({
+          data: {
+            name,
+            description,
+            price,
+            imageUrl,
+          },
+        });
+
+        return {
+          data: product,
+        };
+      } catch (error) {
+        logger.error("Error while adding product: ", error);
+        throw new GraphQLError("Internal server error", {
+          extensions: { code: "INTERNAL_SERVER_ERROR" },
+        });
+      }
+    },
+  },
 };
