@@ -101,7 +101,7 @@ export const AuthResolvers = {
           });
         }
 
-        const token = GenerateToken(existingUser.id, existingUser.email);
+        const token = GenerateToken(existingUser.id, existingUser.email, existingUser.role);
 
         res.cookie("token", token, {
           httpOnly: true,
