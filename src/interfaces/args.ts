@@ -8,3 +8,7 @@ export interface SigninArgs {
   email: string;
   password: string;
 }
+
+export interface UserArgs {
+  username: string;
+}

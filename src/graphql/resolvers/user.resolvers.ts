@@ -1,6 +1,8 @@
 import { GraphQLError } from "graphql";
-import { logger } from "../../utils/logger";
-import { Context } from "../../types/context";
+import { logger } from "../../utils/logger.js";
+import { Context } from "../../types/context.js";
+import { UserArgs } from "../../interfaces/args.js";
+import { userValidation } from "../../validations/user.js";
 
 export const UserResolver = {
   Query: {
@@ -68,5 +70,49 @@ export const UserResolver = {
       }
     },
   },
-  Mutation: {},
+  Mutation: {
+    updateUserProfile: async (_: any, args: UserArgs, context: Context) => {
+      try {
+        const userId = context.user?.id;
+
+        if (!userId) {
+          logger.error("Unauthorized: id is missing in token");
+          throw new GraphQLError("Unauthorized", {
+            extensions: { code: "UNAUTHORIZED" },
+          });
+        }
+
+        const data = userValidation.safeParse(args);
+
+        if (!data.success) {
+          logger.error("Validation failed", data.error.flatten());
+          throw new GraphQLError("Invalid input", {
+            extensions: {
+              code: "BAD_USER_INPUT",
+              errors: data.error.flatten(),
+            },
+          });
+        }
+
+        const updatedData = await prisma.user.update({
+          where: { id: userId },
+          data: { username: data.data.username },
+        });
+
+        return {
+          data: {
+            id: updatedData.id,
+            email: updatedData.email,
+            username: updatedData.username,
+            role: updatedData.role,
+          },
+        };
+      } catch (error) {
+        logger.error("Error while updating user profile", error);
+        throw new GraphQLError("Internal server error", {
+          extensions: { code: "INTERNAL_SERVER_ERROR" },
+        });
+      }
+    },
+  },
 };
