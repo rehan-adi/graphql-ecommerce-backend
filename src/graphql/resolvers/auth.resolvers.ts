@@ -8,38 +8,6 @@ import { HashPassword, ComparePassword } from "../../utils/password.js";
 import { signinValidation, signupValidation } from "../../validations/auth.js";
 
 export const AuthResolvers = {
-  Query: {
-    getUserProfile: async (_: any, args: any, context: Context) => {
-      try {
-        const userId = context.user.id;
-
-        if (!userId) {
-          logger.error("userId not found: Unauthorized");
-          throw new GraphQLError("Unauthorized", {
-            extensions: { code: "UNAUTHORIZED" },
-          });
-        }
-
-        const user = await prisma.user.findUnique({
-          where: { id: userId },
-        });
-
-        return {
-          data: {
-            id: user.id,
-            email: user.email,
-            username: user.username,
-            role: user.role,
-          },
-        };
-      } catch (error) {
-        logger.error("Error while getting user's profile", error);
-        throw new GraphQLError("Internal server error", {
-          extensions: { code: "INTERNAL_SERVER_ERROR" },
-        });
-      }
-    },
-  },
   Mutation: {
     signup: async (_: any, args: SignupArgs) => {
       try {
