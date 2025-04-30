@@ -12,3 +12,7 @@ export interface SigninArgs {
 export interface UserArgs {
   username: string;
 }
+
+export interface ProductIdArgs {
+  productId: number;
+}
