@@ -192,5 +192,41 @@ export const productResolvers = {
         });
       }
     },
+    deleteProduct: async (_: any, args: { id: number }, context: Context) => {
+      try {
+        const creator = context.user?.role;
+
+        if (creator !== "Admin") {
+          logger.error("Unauthorized: Must be admin to delete products");
+          throw new GraphQLError("Unauthorized", {
+            extensions: { code: "UNAUTHORIZED" },
+          });
+        }
+
+        const existingProduct = await prisma.product.findUnique({
+          where: { id: args.id },
+        });
+
+        if (!existingProduct) {
+          logger.error(`Product with id ${args.id} not found`);
+          throw new GraphQLError("Product not found", {
+            extensions: { code: "NOT_FOUND" },
+          });
+        }
+
+        await prisma.product.delete({
+          where: { id: args.id },
+        });
+
+        return {
+          message: "Product successfully deleted",
+        };
+      } catch (error) {
+        logger.error("Error while deleting product: ", error);
+        throw new GraphQLError("Internal server error", {
+          extensions: { code: "INTERNAL_SERVER_ERROR" },
+        });
+      }
+    },
   },
 };
