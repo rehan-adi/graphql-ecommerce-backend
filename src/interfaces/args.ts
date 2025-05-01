@@ -17,7 +17,15 @@ export interface ProductIdArgs {
   productId: number;
 }
 
-export interface CreateProductIdArgs {
+export interface CreateProductArgs {
+  name: string;
+  description: string;
+  price: number;
+  imageUrl: string;
+}
+
+export interface UpdateProductArgs {
+  id: number;
   name: string;
   description: string;
   price: number;
