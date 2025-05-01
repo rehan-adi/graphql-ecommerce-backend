@@ -85,12 +85,30 @@ export const UserResolver = {
         const data = userValidation.safeParse(args);
 
         if (!data.success) {
-          logger.error("Validation failed", data.error.flatten());
+          const formattedErrors = data.error.errors.map((err) => ({
+            field: err.path.join("."),
+            message: err.message,
+          }));
+
+          logger.warn(
+            "Validation failed during profile update",
+            formattedErrors
+          );
           throw new GraphQLError("Invalid input", {
             extensions: {
               code: "BAD_USER_INPUT",
-              errors: data.error.flatten(),
+              fieldErrors: formattedErrors,
             },
+          });
+        }
+
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+        });
+
+        if (!user) {
+          throw new GraphQLError("User not found", {
+            extensions: { code: "NOT_FOUND" },
           });
         }
 
