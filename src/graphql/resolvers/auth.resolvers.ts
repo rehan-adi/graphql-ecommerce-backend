@@ -16,9 +16,17 @@ export const AuthResolvers = {
         const data = signupValidation.safeParse({ email, username, password });
 
         if (!data.success) {
-          logger.error("Validation failed for data: ", data);
+          const formattedErrors = data.error.errors.map((err) => ({
+            field: err.path.join("."),
+            message: err.message,
+          }));
+
+          logger.error("Validation failed during signup", formattedErrors);
           throw new GraphQLError("Validation failed", {
-            extensions: { code: "BAD_USER_INPUT" },
+            extensions: {
+              code: "BAD_USER_INPUT",
+              fieldErrors: formattedErrors,
+            },
           });
         }
 
@@ -34,7 +42,12 @@ export const AuthResolvers = {
 
         if (existingUser) {
           throw new GraphQLError("Email is already in use.", {
-            extensions: { code: "BAD_USER_INPUT" },
+            extensions: {
+              code: "BAD_USER_INPUT",
+              fieldErrors: [
+                { field: "email", message: "Email is already in use." },
+              ],
+            },
           });
         }
 
@@ -58,6 +71,11 @@ export const AuthResolvers = {
         };
       } catch (error) {
         logger.error("Error during user signup: ", error);
+
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
+
         throw new GraphQLError("Internal server error", {
           extensions: { code: "INTERNAL_SERVER_ERROR" },
         });
@@ -71,9 +89,17 @@ export const AuthResolvers = {
         const data = signinValidation.safeParse({ email, password });
 
         if (!data.success) {
-          logger.error("Validation failed for data: ", data);
+          const formattedErrors = data.error.errors.map((err) => ({
+            field: err.path.join("."),
+            message: err.message,
+          }));
+
+          logger.error("Validation failed during signin", formattedErrors);
           throw new GraphQLError("Validation failed", {
-            extensions: { code: "BAD_USER_INPUT" },
+            extensions: {
+              code: "BAD_USER_INPUT",
+              fieldErrors: formattedErrors,
+            },
           });
         }
 
@@ -85,8 +111,13 @@ export const AuthResolvers = {
         });
 
         if (!existingUser) {
-          throw new GraphQLError("User not found", {
-            extensions: { code: "BAD_USER_INPUT" },
+          throw new GraphQLError("Invalid email or password", {
+            extensions: {
+              code: "UNAUTHORIZED",
+              fieldErrors: [
+                { field: "email", message: "Invalid email or password" },
+              ],
+            },
           });
         }
 
@@ -96,12 +127,21 @@ export const AuthResolvers = {
         );
 
         if (!isPasswordValid) {
-          throw new GraphQLError("Password is not valid", {
-            extensions: { code: "UNAUTHORIZED" },
+          throw new GraphQLError("Invalid email or password", {
+            extensions: {
+              code: "UNAUTHORIZED",
+              fieldErrors: [
+                { field: "password", message: "Invalid email or password" },
+              ],
+            },
           });
         }
 
-        const token = GenerateToken(existingUser.id, existingUser.email, existingUser.role);
+        const token = GenerateToken(
+          existingUser.id,
+          existingUser.email,
+          existingUser.role
+        );
 
         res.cookie("token", token, {
           httpOnly: true,
@@ -120,7 +160,12 @@ export const AuthResolvers = {
           },
         };
       } catch (error) {
-        logger.error("Error during signin: ", error);
+        logger.error("Error during signin ", error);
+
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
+
         throw new GraphQLError("Internal server error", {
           extensions: { code: "INTERNAL_SERVER_ERROR" },
         });
