@@ -10,5 +10,6 @@ export const resolvers = {
   Mutation: {
     ...AuthResolvers.Mutation,
     ...UserResolver.Mutation,
+    ...productResolvers.Mutation
   },
 };
