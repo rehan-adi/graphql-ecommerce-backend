@@ -192,7 +192,7 @@ export const productResolvers = {
         });
       }
     },
-    deleteProduct: async (_: any, args: { id: number }, context: Context) => {
+    deleteProduct: async (_: any, args: { id: string }, context: Context) => {
       try {
         const creator = context.user?.role;
 
@@ -203,8 +203,10 @@ export const productResolvers = {
           });
         }
 
+        const productId = parseInt(args.id, 10);
+
         const existingProduct = await prisma.product.findUnique({
-          where: { id: args.id },
+          where: { id: productId },
         });
 
         if (!existingProduct) {
@@ -215,7 +217,7 @@ export const productResolvers = {
         }
 
         await prisma.product.delete({
-          where: { id: args.id },
+          where: { id: productId },
         });
 
         return {
