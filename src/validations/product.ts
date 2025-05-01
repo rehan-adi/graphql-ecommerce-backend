@@ -12,3 +12,5 @@ export const CreateProductValidation = z.object({
   price: z.number().positive("Price must be a positive number"),
   imageUrl: z.string().url("Image URL must be a valid URL"),
 });
+
+export const UpdateProductValidation = CreateProductValidation.partial();
