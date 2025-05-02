@@ -13,10 +13,28 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: "18"
+      - name: Setup SSH Key
+        run: |
+          echo "$EC2_KEY" > private_key.pem
+          chmod 600 private_key.pem
+        env:
+          EC2_KEY: ${{ secrets.EC2_KEY }}
 
-      - name: Install dependencies
-        run: npm install
+      - name: SSH and deploy
+        run: |
+          ssh -i private_key.pem -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+            cd /home/ubuntu/graphql-ecommerce-backend
+
+            echo "PORT=${{ secrets.PORT }}" > .env
+            echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+
+            pnpm install
+            pnpm build
+            npx prisma generate
+            npx prisma migrate deploy
+            pm2 restart all || pm2 start dist/server.js --name app
+          EOF
+
+      - name: Clean up
+        run: rm -f private_key.pem
