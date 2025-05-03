@@ -8,31 +8,27 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Setup SSH Key
         run: |
-          echo "${{ secrets.EC2_KEY }}" > private_key.pem
-          chmod 600 private_key.pem
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_KEY }}" > ~/.ssh/private_key
+          chmod 600 ~/.ssh/private_key
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
       - name: SSH and deploy
         run: |
-          ssh -i private_key.pem -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
-            cd /home/ubuntu/graphql-ecommerce-backend
-
-            echo "PORT=${{ secrets.PORT }}" > .env
-            echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
-            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
-
-            pnpm install
-            pnpm build
-            npx prisma generate
-            npx prisma migrate deploy
+          ssh -i ~/.ssh/private_key ubuntu@${{ secrets.EC2_HOST }} '
+            cd /home/ubuntu/graphql-ecommerce-backend && 
+            echo "PORT=${{ secrets.PORT }}" > .env && 
+            echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env && 
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env && 
+            pnpm install && 
+            pnpm build && 
+            npx prisma generate && 
+            npx prisma migrate deploy && 
             pm2 restart all || pm2 start dist/server.js --name app
-          EOF
-
-      - name: Clean up
-        run: rm -f private_key.pem
+          '
