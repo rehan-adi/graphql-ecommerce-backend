@@ -12,7 +12,7 @@ import {
   UpdateProductArgs,
 } from "../../interfaces/args.js";
 
-export const productResolvers = {
+export const ProductResolvers = {
   Query: {
     getAllProducts: async () => {
       try {
@@ -44,8 +44,10 @@ export const productResolvers = {
     },
     getProductById: async (_: any, args: ProductIdArgs) => {
       try {
+        const productId = parseInt(args.productId, 10);
+
         const product = await prisma.product.findUnique({
-          where: { id: args.productId },
+          where: { id: productId },
           select: {
             id: true,
             name: true,

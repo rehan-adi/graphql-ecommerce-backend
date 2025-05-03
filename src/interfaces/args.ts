@@ -14,7 +14,7 @@ export interface UserArgs {
 }
 
 export interface ProductIdArgs {
-  productId: number;
+  productId: string;
 }
 
 export interface CreateProductArgs {
