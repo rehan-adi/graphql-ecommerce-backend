@@ -17,11 +17,13 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_KEY }}" > ~/.ssh/private_key
           chmod 600 ~/.ssh/private_key
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          # Skip hostname verification since we're having DNS issues
+          echo "StrictHostKeyChecking no" > ~/.ssh/config
 
       - name: SSH and deploy
         run: |
-          ssh -i ~/.ssh/private_key ubuntu@${{ secrets.EC2_HOST }} '
+          # Use the IP address directly from the secrets
+          ssh -i ~/.ssh/private_key -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} '
             cd /home/ubuntu/graphql-ecommerce-backend && 
             echo "PORT=${{ secrets.PORT }}" > .env && 
             echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env && 
