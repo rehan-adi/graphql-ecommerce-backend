@@ -1,15 +1,18 @@
 import { AuthResolvers } from "./auth.resolvers.js";
 import { UserResolver } from "./user.resolvers.js";
-import { productResolvers } from "./product.resolvers.js";
+import { CartResolver } from "./cart.resolvers.js";
+import { ProductResolvers } from "./product.resolvers.js";
 
 export const resolvers = {
   Query: {
     ...UserResolver.Query,
-    ...productResolvers.Query
+    ...ProductResolvers.Query,
+    ...CartResolver.Query,
   },
   Mutation: {
     ...AuthResolvers.Mutation,
     ...UserResolver.Mutation,
-    ...productResolvers.Mutation
+    ...ProductResolvers.Mutation,
+    ...CartResolver.Mutation,
   },
 };
