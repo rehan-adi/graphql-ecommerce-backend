@@ -5,11 +5,11 @@ import morgan from "morgan";
 import { logger } from "./utils/logger.js";
 import { Context } from "./types/context.js";
 import { ApolloServer } from "@apollo/server";
+import { VerifyToken } from "./utils/token.js";
 import express, { Application } from "express";
 import { typeDefs } from "./graphql/typeDefs/index.js";
 import { resolvers } from "./graphql/resolvers/index.js";
 import { expressMiddleware } from "@apollo/server/express4";
-import { VerifyToken } from "./utils/token.js";
 
 async function Main() {
   const app: Application = express();
@@ -32,6 +32,15 @@ async function Main() {
   });
 
   await server.start();
+
+  // Health Check Route
+  app.get("/api/health", (req, res) => {
+    logger.info("Health check pinged");
+    res.status(200).json({
+      success: true,
+      message: "Server is up and running 🚀",
+    });
+  });
 
   app.use(
     "/graphql",
